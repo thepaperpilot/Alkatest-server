@@ -80,7 +80,7 @@ io.on("connection", function (socket) {
         }
 
         await socket.join(name);
-        socket.emit("set nicknames", Object.values(rooms[name].nicknames));
+        socket.emit("set nicknames", rooms[name].nicknames);
         socket.emit("joined room", name.slice(0, -5), true);
     });
     socket.on("connect to room", async (name: string, password: string | undefined, nickname: string) => {
@@ -107,11 +107,6 @@ io.on("connection", function (socket) {
             socket.emit("info", "Cannot join room with incorrect password");
             return;
         }
-
-        if (Object.values(room.nicknames).includes(nickname)) {
-            socket.emit("info", "Cannot join room with already taken nickname");
-            return;
-        }
         
         log(`${nickname} joined room ${name}`);
 
@@ -119,8 +114,19 @@ io.on("connection", function (socket) {
         socket.emit("set content packs", room.contentPacks);
         socket.emit("set game state", room.state);
         room.nicknames[socket.id] = nickname;
-        io.to(name).emit("set nicknames", Object.values(room.nicknames));
+        io.to(name).emit("set nicknames", room.nicknames);
         socket.emit("joined room", name.slice(0, -5), false);
+    });
+    socket.on("set nickname", nickname => {
+        const [room] = socket.rooms;
+
+        if (!socket.rooms.has(room) || !(room in rooms)) {
+            // Ignoring event due to not being in room
+            return;
+        }
+
+        rooms[room].nicknames[socket.id] = nickname;
+        io.to(room).emit("set nicknames", rooms[room].nicknames);
     });
     socket.on("leave room", () => {
         leaveRoom(socket);
@@ -236,7 +242,7 @@ function leaveRoom(socket: Socket) {
         delete rooms[room];
     } else {
         delete rooms[room].nicknames[socket.id];
-        socket.to(room).emit("set nicknames", Object.values(rooms[room].nicknames));
+        socket.to(room).emit("set nicknames", rooms[room].nicknames);
         socket.emit("left room");
         socket.leave(room);
     }
@@ -251,9 +257,8 @@ function setupBroadcastPassthrough(socket: Socket, event: keyof ServerToClientEv
             return;
         }
 
-        const nickname = rooms[room].nicknames[socket.id];
         // @ts-ignore
-        io.to(room).emit(event, nickname, ...args);
+        io.to(room).emit(event, socket.id, ...args);
     });
 }
 
@@ -270,9 +275,8 @@ function setupBroadcastPassthroughIfHost(socket: Socket, event: keyof ServerToCl
             log("Ignoring event due to not being host", "info", { event, args });
         }
 
-        const nickname = rooms[room].nicknames[socket.id];
         // @ts-ignore
-        io.to(room).emit(event, nickname, ...args);
+        io.to(room).emit(event, ...args);
     });
 }
 
@@ -289,8 +293,7 @@ function setupSendingToHost(socket: Socket, event: keyof ServerToClientEvents) {
             log("Ignoring event due to being host", "info", { event, args });
         }
 
-        const nickname = rooms[room].nicknames[socket.id];
         // @ts-ignore
-        io.sockets.sockets.get(rooms[room].host)?.emit(event, nickname, ...args);
+        io.sockets.sockets.get(rooms[room].host)?.emit(event, ...args);
     });
 }
