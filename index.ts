@@ -51,7 +51,7 @@ io.on("connection", function (socket) {
             numContentPacks: rooms[r].contentPacks.length
         })));
     });
-    socket.on("create room", ({ name, password, privateRoom, contentPacks, state, nickname }) => {
+    socket.on("create room", async ({ name, password, privateRoom, contentPacks, state, nickname }) => {
         if (name === "") {
             socket.emit("info", "Cannot create room with no name");
             return;
@@ -79,7 +79,9 @@ io.on("connection", function (socket) {
             nicknames: { [socket.id]: nickname }
         }
 
-        void socket.join(name);
+        await socket.join(name);
+        socket.emit("set nicknames", Object.values(rooms[name].nicknames));
+        socket.emit("joined room", name, true);
     });
     socket.on("connect to room", async (name: string, password: string | undefined, nickname: string) => {
         if (name === "") {
@@ -118,6 +120,7 @@ io.on("connection", function (socket) {
         socket.emit("set game state", room.state);
         room.nicknames[socket.id] = nickname;
         socket.emit("set nicknames", Object.values(room.nicknames));
+        socket.emit("joined room", name, false);
     });
     socket.on("leave room", () => {
         leaveRoom(socket);
@@ -228,11 +231,13 @@ function leaveRoom(socket: Socket) {
 
     if (rooms[room].host === socket.id) {
         log(`Closing room: ${room}`);
+        io.to(room).emit("left room");
         io.to(room).socketsLeave(room);
         delete rooms[room];
     } else {
         delete rooms[room].nicknames[socket.id];
         socket.to(room).emit("set nicknames", Object.values(rooms[room].nicknames));
+        socket.emit("left room");
         socket.leave(room);
     }
 }
