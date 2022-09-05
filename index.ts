@@ -45,7 +45,7 @@ io.on("connection", function (socket) {
     // Add Application Listeners
     socket.on("get rooms", () => {
         socket.emit("set rooms", Object.keys(rooms).filter(r => rooms[r].private !== true).map(r => ({
-            name: r,
+            name: r.slice(0, -5),
             host: rooms[r].nicknames[rooms[r].host],
             hasPassword: !!rooms[r].password,
             numContentPacks: rooms[r].contentPacks.length
@@ -68,7 +68,7 @@ io.on("connection", function (socket) {
             return;
         }
 
-        log(`{${nickname} created new room ${name}`);
+        log(`${nickname} created new room ${name}`);
 
         rooms[name] = {
             host: socket.id,
