@@ -52,6 +52,11 @@ io.on("connection", function (socket) {
         })));
     });
     socket.on("create room", ({ name, password, privateRoom, contentPacks, state, nickname }) => {
+        if (name === "") {
+            socket.emit("info", "Cannot create room with no name");
+            return;
+        }
+
         name = name + "-room";
         if (name in rooms) {
             socket.emit("info", "Cannot create room with that name");
