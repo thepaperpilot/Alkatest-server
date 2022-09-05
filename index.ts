@@ -47,7 +47,8 @@ io.on("connection", function (socket) {
         socket.emit("set rooms", Object.keys(rooms).filter(r => rooms[r].private !== true).map(r => ({
             name: r,
             host: rooms[r].nicknames[rooms[r].host],
-            hasPassword: !!rooms[r].password
+            hasPassword: !!rooms[r].password,
+            numContentPacks: rooms[r].contentPacks.length
         })));
     });
     socket.on("create room", ({ name, password, privateRoom, contentPacks, state, nickname }) => {
