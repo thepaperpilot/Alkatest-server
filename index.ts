@@ -81,7 +81,7 @@ io.on("connection", function (socket) {
 
         await socket.join(name);
         socket.emit("set nicknames", Object.values(rooms[name].nicknames));
-        socket.emit("joined room", name, true);
+        socket.emit("joined room", name.slice(0, -5), true);
     });
     socket.on("connect to room", async (name: string, password: string | undefined, nickname: string) => {
         if (name === "") {
@@ -103,7 +103,7 @@ io.on("connection", function (socket) {
         
         const room = rooms[name];
 
-        if (room.password !== password) {
+        if (room.password && room.password != password) {
             socket.emit("info", "Cannot join room with incorrect password");
             return;
         }
@@ -119,8 +119,8 @@ io.on("connection", function (socket) {
         socket.emit("set content packs", room.contentPacks);
         socket.emit("set game state", room.state);
         room.nicknames[socket.id] = nickname;
-        socket.emit("set nicknames", Object.values(room.nicknames));
-        socket.emit("joined room", name, false);
+        io.to(name).emit("set nicknames", Object.values(room.nicknames));
+        socket.emit("joined room", name.slice(0, -5), false);
     });
     socket.on("leave room", () => {
         leaveRoom(socket);
