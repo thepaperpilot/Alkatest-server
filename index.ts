@@ -31,7 +31,7 @@ const rooms: Record<string, Room> = {};
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function log(message: string, level: LogLevels = "log", data: any = undefined) {
     if (logLevels.includes(level)) {
-      console[level](message, data);
+      console[level](new Date().toLocaleTimeString("en-US", { hour12: false }), message, data);
     }
 }
 
