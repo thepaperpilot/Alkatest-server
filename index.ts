@@ -68,7 +68,7 @@ io.on("connection", function (socket) {
             return;
         }
 
-        log(`${nickname} created new room ${name}`);
+        log(`${socket.id} created new room ${name}`);
 
         rooms[name] = {
             host: socket.id,
@@ -108,7 +108,7 @@ io.on("connection", function (socket) {
             return;
         }
         
-        log(`${nickname} joined room ${name}`);
+        log(`${socket.id} joined room ${name}`);
 
         await socket.join(name);
         socket.emit("set content packs", room.contentPacks);
@@ -233,7 +233,7 @@ function leaveRoom(socket: Socket) {
     }
 
     const nickname = rooms[room].nicknames[socket.id];
-    log(`${nickname} left their room`);
+    log(`${socket.id} left their room`);
 
     if (rooms[room].host === socket.id) {
         log(`Closing room: ${room}`);
