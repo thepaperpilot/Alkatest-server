@@ -224,6 +224,8 @@ io.on("connection", function (socket) {
     });
 });
 
+console.log("Started server on port", port);
+
 function leaveRoom(socket: Socket) {
     const [room] = socket.rooms;
 
